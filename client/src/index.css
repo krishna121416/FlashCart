@@ -1,0 +1,58 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  background: #0f1117;
+  color: #e6e6e6;
+}
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+header h1 { margin-bottom: 0; }
+header p { color: #9aa0a6; margin-top: 4px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.card {
+  background: #1a1d27;
+  border: 1px solid #2a2e3a;
+  border-radius: 10px;
+  padding: 16px;
+}
+.card h3 { margin: 0 0 4px; }
+.price { color: #9aa0a6; margin: 0 0 8px; }
+.stock { font-weight: 600; margin: 0 0 12px; }
+.stock.low { color: #f5a623; }
+.stock.sold-out { color: #e5484d; }
+
+.buy-row { display: flex; gap: 8px; }
+.buy-row input {
+  width: 60px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #2a2e3a;
+  background: #0f1117;
+  color: #e6e6e6;
+}
+.buy-row button, .confirm-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #6c5ce7;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+.buy-row button:disabled, .confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.confirm-btn { margin-top: 10px; width: 100%; background: #00b894; }
+
+.message { margin-top: 10px; font-size: 13px; }
+.message.success { color: #55efc4; }
+.message.error { color: #ff7675; }
