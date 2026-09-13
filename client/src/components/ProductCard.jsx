@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
+import { api } from '../services/api';
 
 export default function ProductCard({ product, onOrderPlaced }) {
   const [available, setAvailable] = useState(product.available ?? product.stock - product.reserved);
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
-  const [lastOrder, setLastOrder] = useState(null);
+  const [reservedOrder, setReservedOrder] = useState(null); // { orderId, quantity } while awaiting confirm
 
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const fresh = await api.getProduct(product._id);
-        setAvailable(fresh.available);
+        setAvailable(fresh.availableStock);
       } catch {
         // transient poll failure, ignore
       }
@@ -25,10 +25,13 @@ export default function ProductCard({ product, onOrderPlaced }) {
     setMessage(null);
     try {
       const order = await api.createOrder(product._id, quantity);
-      setLastOrder(order);
-      setMessage({ type: 'success', text: `Reserved! Order ${order._id} holds ${order.quantity} unit(s). Confirm within 5 minutes.` });
+      setReservedOrder({ orderId: order.orderId, quantity: order.quantity });
+      setMessage({
+        type: 'success',
+        text: `Reserved! Order ${order.orderId} holds ${order.quantity} unit(s). Confirm within 5 minutes.`,
+      });
       const fresh = await api.getProduct(product._id);
-      setAvailable(fresh.available);
+      setAvailable(fresh.availableStock);
       onOrderPlaced?.(order);
     } catch (err) {
       setMessage({ type: 'error', text: err.message });
@@ -38,12 +41,12 @@ export default function ProductCard({ product, onOrderPlaced }) {
   }
 
   async function handleConfirm() {
-    if (!lastOrder) return;
+    if (!reservedOrder) return;
     setBusy(true);
     try {
-      const confirmed = await api.confirmOrder(lastOrder._id);
-      setLastOrder(confirmed);
-      setMessage({ type: 'success', text: `Order confirmed! Payment complete.` });
+      await api.confirmOrder(reservedOrder.orderId);
+      setReservedOrder(null);
+      setMessage({ type: 'success', text: 'Order confirmed! Payment complete.' });
     } catch (err) {
       setMessage({ type: 'error', text: err.message });
     } finally {
@@ -70,13 +73,13 @@ export default function ProductCard({ product, onOrderPlaced }) {
           disabled={busy || soldOut}
         />
         <button onClick={handleBuy} disabled={busy || soldOut}>
-          {busy ? '...' : 'Buy'}
+          {busy ? '...' : 'Buy Now'}
         </button>
       </div>
 
-      {lastOrder && lastOrder.status === 'reserved' && (
+      {reservedOrder && (
         <button className="confirm-btn" onClick={handleConfirm} disabled={busy}>
-          Confirm order {lastOrder._id.slice(-6)}
+          Confirm order {reservedOrder.orderId.slice(-6)}
         </button>
       )}
 
