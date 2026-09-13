@@ -58,6 +58,12 @@ async function invalidateStock(productId) {
   }
 }
 
+function getRedisStatus() {
+  if (process.env.DISABLE_REDIS === 'true') return 'disabled';
+  const c = getClient(); // ensures a connection attempt has been made
+  return c && c.isReady ? 'connected' : 'disconnected';
+}
+
 async function closeRedis() {
   if (client) {
     try {
@@ -70,4 +76,11 @@ async function closeRedis() {
   }
 }
 
-module.exports = { getClient, getCachedStock, setCachedStock, invalidateStock, closeRedis };
+module.exports = {
+  getClient,
+  getCachedStock,
+  setCachedStock,
+  invalidateStock,
+  getRedisStatus,
+  closeRedis,
+};

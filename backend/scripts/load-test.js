@@ -3,10 +3,11 @@
  * stock, against a running FlashCart API, and report how many succeeded.
  *
  * Usage:
- *   node loadtest/loadtest.js [--url http://localhost:4000] [--stock 10] [--requests 200]
+ *   node backend/scripts/load-test.js [--url http://localhost:4000] [--stock 10] [--requests 200]
+ *   (or: npm run load-test -- --stock 10 --requests 200, from backend/)
  *
  * Requires the API (and Mongo/Redis) to already be running, e.g. via
- * `docker compose up` or `npm run dev` in server/.
+ * `docker compose up` or `npm run dev` in backend/.
  */
 
 const BASE_URL = argValue('--url') || 'http://localhost:4000';
@@ -71,16 +72,25 @@ async function main() {
 
   const final = await getProduct(product._id);
 
-  console.log('\n--- RESULTS ---');
-  console.log(`Total wall time:        ${totalMs} ms`);
-  console.log(`Requests sent:          ${REQUEST_COUNT}`);
-  console.log(`Succeeded (201):        ${succeeded.length}`);
-  console.log(`Rejected - no stock (409): ${rejected.length}`);
-  console.log(`Other/errors:           ${errored.length}`);
-  console.log(`Final available stock:  ${final.available}`);
-  console.log('----------------\n');
+  console.log('\nFlash Sale Load Test Results');
+  console.log('-----------------------------');
+  console.log(`Starting stock:          ${STOCK}`);
+  console.log(`Concurrent requests:     ${REQUEST_COUNT}`);
+  console.log(`Total wall time:         ${totalMs} ms`);
+  console.log(`Successful reservations: ${succeeded.length}`);
+  console.log(`Rejected requests:       ${rejected.length}`);
+  console.log(`Other/errors:            ${errored.length}`);
+  console.log(`Final available stock:   ${final.availableStock}`);
+  console.log(`Oversold:                ${succeeded.length > STOCK ? 'YES' : 'NO'}`);
+  console.log('-----------------------------\n');
 
-  const pass = succeeded.length === STOCK && final.available === 0 && errored.length === 0;
+  if (errored.length > 0) {
+    console.log('Error/other responses (for diagnosis):');
+    errored.forEach((r, i) => console.log(`  [${i}] status=${r.status} ${r.error || JSON.stringify(r.body)}`));
+    console.log();
+  }
+
+  const pass = succeeded.length === STOCK && final.availableStock === 0 && errored.length === 0;
   console.log(pass ? 'PASS: sold exactly the available stock, never oversold.' : 'FAIL: see numbers above.');
 
   if (!pass) process.exitCode = 1;
