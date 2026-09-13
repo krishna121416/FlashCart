@@ -252,10 +252,51 @@ node loadtest/loadtest.js --url http://localhost:4000 --stock 10 --requests 200
 
 ### Result
 
+Run against the full Docker Compose stack on this machine (Mongo + Redis +
+API, product seeded with 10 units of stock):
+
 ```
-<LOADTEST_RESULT_PLACEHOLDER>
+$ node loadtest/loadtest.js --url http://localhost:4000 --stock 10 --requests 200
+
+FlashCart load test
+  target:    http://localhost:4000
+  stock:     10
+  requests:  200 (concurrent)
+
+Creating product...
+  product_id: 6aa6daf3c54c0614cc656b25
+
+Firing 200 concurrent POST /orders...
+
+--- RESULTS ---
+Total wall time:        582 ms
+Requests sent:          200
+Succeeded (201):        10
+Rejected - no stock (409): 190
+Other/errors:           0
+Final available stock:  0
+----------------
+
+PASS: sold exactly the available stock, never oversold.
 ```
 
-Exactly 10 orders succeeded, 190 were cleanly rejected with `409 Not enough
-stock available`, and the final live stock settled at `0` - never negative,
-never oversold.
+Re-run at 5x the demand (1,000 concurrent requests against the same 10
+units) to confirm it isn't a fluke of request count:
+
+```
+$ node loadtest/loadtest.js --url http://localhost:4000 --stock 10 --requests 1000
+
+Requests sent:          1000
+Succeeded (201):        10
+Rejected - no stock (409): 990
+Other/errors:           0
+Final available stock:  0
+
+PASS: sold exactly the available stock, never oversold.
+```
+
+In both runs: exactly 10 orders succeeded, every remaining request was
+cleanly rejected with `409 Not enough stock available`, `Product.reserved`
+never exceeded `Product.stock`, and final live stock settled at exactly `0`
+- never negative, never oversold, regardless of how much demand was thrown
+at it.
