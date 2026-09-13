@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: flashcart-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: flashcart-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./server
+    container_name: flashcart-api
+    ports:
+      - '4000:4000'
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongo:27017/flashcart
+      REDIS_URL: redis://redis:6379
+      RESERVATION_TTL_MS: 300000
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    container_name: flashcart-client
+    ports:
+      - '5173:5173'
+    depends_on:
+      - api
+
+volumes:
+  mongo-data:
