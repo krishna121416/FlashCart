@@ -25,7 +25,7 @@ describe('products API', () => {
 
     const res = await request(app).get(`/products/${id}`);
     expect(res.status).toBe(200);
-    expect(res.body.available).toBe(7);
+    expect(res.body.availableStock).toBe(7);
   });
 
   test('GET /products/:id 404s for missing product', async () => {

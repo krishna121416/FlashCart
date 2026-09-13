@@ -2,7 +2,7 @@ const request = require('supertest');
 const { createApp } = require('../src/app');
 const Product = require('../src/models/Product');
 const Order = require('../src/models/Order');
-const { sweepExpiredReservations } = require('../src/jobs/expireReservations');
+const { sweepExpiredReservations } = require('../src/services/expiryService');
 
 const app = createApp();
 
@@ -35,7 +35,7 @@ describe('reservation expiry sweep', () => {
     const firstOrder = await request(app).post('/orders').send({ product_id: product._id, quantity: 1 });
     expect(firstOrder.status).toBe(201);
 
-    await Order.updateOne({ _id: firstOrder.body._id }, { expires_at: new Date(Date.now() - 1000) });
+    await Order.updateOne({ _id: firstOrder.body.orderId }, { expires_at: new Date(Date.now() - 1000) });
     await sweepExpiredReservations();
 
     // A second buyer can now successfully reserve the released unit.
